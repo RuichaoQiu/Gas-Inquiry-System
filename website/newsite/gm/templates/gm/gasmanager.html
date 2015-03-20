@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title> My first Attempt </title>
+		<script
+			src="http://maps.googleapis.com/maps/api/js?key=AIzaSyCyY6mM5HyT5svJF0B-N7dpIlF1P7zDeyc&sensor=false">
+		</script>
+
+		<script>
+		var map;
+		var geocoder=new google.maps.Geocoder();
+
+		//=======================
+		// get info from database 
+		// 
+		var stations=[];
+		stations.push({name: "Marathon - Circle K", address: "1713 w john st, Champaign", price: 2.94});
+		stations.push({name: "Mobile Super Pantry", address: "1601 w springfield ave, Champaign", price: 2.95});
+		stations.push({name: "Meijer", address: "2602 S Philo Rd Windsor Rd, Urbana", price: 2.99});
+		stations.push({name: "Circle K", address: "1501 N Lincoln Ave, Urbana", price: 2.97});
+
+
+		//function for set gas stations on Google map
+		function setmarker(station)
+		{
+			geocoder.geocode( { 'address': station.address}, function(results, status) 
+			{
+    			if (status == google.maps.GeocoderStatus.OK) 
+    			{
+      				//map.setCenter(results[0].geometry.location);
+      				var marker = new google.maps.Marker(
+      				{
+          				//map: map,
+          				position: results[0].geometry.location
+      				});
+      				var infowindow = new google.maps.InfoWindow({content:station.name+", price:"+station.price});
+      				google.maps.event.addListener(marker, 'click', function() {infowindow.open(map,marker);});
+      				marker.setMap(map);
+    			} else 
+    				{
+      					alert('Geocode was not successful for the following reason: ' + status);
+    				}
+  			});
+		}
+
+		// initialize map
+		function initialize()
+		{
+			var mapProp = 
+			{
+  				center:new google.maps.LatLng(40.1105,-88.2284), //uiuc LatLng
+  				zoom:12,
+  				mapTypeId:google.maps.MapTypeId.ROADMAP
+  			};
+			map=new google.maps.Map(document.getElementById("googleMap"),mapProp);
+			var i;
+			for (i=0;i<stations.length;i++)
+			{
+				setmarker(stations[i]);
+			}
+		}
+		google.maps.event.addDomListener(window, 'load', initialize);
+
+		</script>
+	</head>
+
+	<body>
+		<h1>
+			Gas Manager
+		</h1>
+		<script type="text/javascript">
+			document.write("gas station map");
+		</script>
+
+		<div id="googleMap" style="width:800px;height:600px;"></div>
+	</body>
+</html>

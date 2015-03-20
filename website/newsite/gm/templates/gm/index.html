@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title> GasManager </title>
+		<script
+			src="http://maps.googleapis.com/maps/api/js?key=AIzaSyCyY6mM5HyT5svJF0B-N7dpIlF1P7zDeyc&sensor=false">
+		</script>
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.0/jquery.min.js">
+		</script>
+		<script>
+		console.log("yesmyfriend");
+		var map;
+		var current_lat, current_lng;
+		var geocoder=new google.maps.Geocoder();
+		var zipcode;
+		//=======================
+		// get info from database
+		//
+		var stations=[];
+		stations.push({name: "Marathon - Circle K", address: "1713 w john st, Champaign", price: 2.94});
+		stations.push({name: "Mobile Super Pantry", address: "1601 w springfield ave, Champaign", price: 2.95});
+		stations.push({name: "Meijer", address: "2602 S Philo Rd Windsor Rd, Urbana", price: 2.99});
+		stations.push({name: "Circle K", address: "1501 N Lincoln Ave, Urbana", price: 2.97});
+		//var curr_add = "605 E White St, Champaign, IL";
+		var markers=[];
+		//function for set gas stations on Google map
+		function setmarker(station)
+		{
+			geocoder.geocode( { 'address': station.address}, function(results, status)
+			{
+    			if (status == google.maps.GeocoderStatus.OK)
+    			{
+      				//map.setCenter(results[0].geometry.location);
+      				var marker = new google.maps.Marker(
+      				{
+          				//map: map,
+          				position: results[0].geometry.location
+      				});
+      				markers.push(marker);
+      				//console.log(marker.position.lat());
+      				var infowindow = new google.maps.InfoWindow({content:station.name+", price:"+station.price});
+      				google.maps.event.addListener(marker, 'click', function() {infowindow.open(map,marker);});
+      				marker.setMap(map);
+    			} else
+    				{
+      					alert('Geocode was not successful for the following reason: ' + status);
+    				}
+  			});
+		}
+
+		// initialize map
+		function initialize()
+		{
+			var mapProp =
+			{
+  				center:new google.maps.LatLng(40.1105,-88.2284), //uiuc LatLng
+  				zoom:12,
+  				mapTypeId:google.maps.MapTypeId.ROADMAP
+  			};
+			map=new google.maps.Map(document.getElementById("googleMap"),mapProp);
+			/*
+			var i;
+			for (i=0;i<stations.length;i++)
+			{
+				setmarker(stations[i]);
+			}
+			*/
+		}
+
+
+		// Update the Google map for the user's inputted address
+		function find_stations( )
+		{
+			var geocoder = new google.maps.Geocoder();    // instantiate a geocoder object
+
+			// Get the user's inputted address
+			var address = document.getElementById( "current_address" ).value;
+			$.ajax({
+		        type: 'POST',
+		        url: "{% url 'gm:getaddr'%}",
+		        data: {'address': address},
+		    });
+			// Make asynchronous call to Google geocoding API
+			geocoder.geocode( { 'address': address }, function(results, status) {
+				var addr_type = results[0].types[0];	// type of address inputted that was geocoded
+				if ( status == google.maps.GeocoderStatus.OK )
+				{
+					current_lat=results[0].geometry.location.lat();
+					current_lng=results[0].geometry.location.lng();
+					ShowLocation( results[0].geometry.location, address, addr_type );
+
+					//return zipcode in console
+					//results[0].address_components[7].long_name is current address zipcode
+					//should push all stations to array "stations"
+					geocoder.geocode({'latLng': results[0].geometry.location}, function(results, status)
+						{
+							console.log(results[0].address_components[7].long_name);
+
+
+						});
+
+				}
+				else
+					alert("Geocode was not successful for the following reason: " + status);
+			});
+
+
+		}
+
+		function Both_find_stations()
+		{
+			var geocoder = new google.maps.Geocoder();    // instantiate a geocoder object
+
+			// Get the user's inputted address
+			var address = document.getElementById( "destination_address" ).value;
+			$.ajax({
+		        type: 'POST',
+		        url: "{% url 'gm:getdest'%}",
+		        data: {'address': address},
+		    });
+
+
+			// Make asynchronous call to Google geocoding API
+			geocoder.geocode( { 'address': address }, function(results, status) {
+				var addr_type = results[0].types[0];	// type of address inputted that was geocoded
+				if ( status == google.maps.GeocoderStatus.OK )
+				{
+					current_lat=results[0].geometry.location.lat();
+					current_lng=results[0].geometry.location.lng();
+					ShowLocation( results[0].geometry.location, address, addr_type );
+
+					//return zipcode in console
+					//results[0].address_components[7].long_name is current address zipcode
+					//should push all stations to array "stations"
+					geocoder.geocode({'latLng': results[0].geometry.location}, function(results, status)
+						{
+
+
+						});
+
+				}
+				else
+					alert("Geocode was not successful for the following reason: " + status);
+			});
+
+		}
+
+		// Show the location (address) on the map.
+		function ShowLocation( latlng, address, addr_type )
+		{
+			// Center the map at the specified location
+			map.setCenter( latlng );
+
+			// Set the zoom level according to the address level of detail the user specified
+			var zoom = 12;
+			switch ( addr_type )
+			{
+			case "administrative_area_level_1"	: zoom = 6; break;		// user specified a state
+			case "locality"						: zoom = 10; break;		// user specified a city/town
+			case "street_address"				: zoom = 15; break;		// user specified a street address
+			}
+			map.setZoom( zoom );
+
+			// Place a Google Marker at the same location as the map center
+			// When you hover over the marker, it will display the title
+			var marker = new google.maps.Marker( {
+				position: latlng,
+				map: map,
+				title: address
+			});
+
+			// Create an InfoWindow for the marker
+			var contentString = "" + address + "";	// HTML text to display in the InfoWindow
+			var infowindow = new google.maps.InfoWindow( { content: contentString } );
+
+			// Set event to display the InfoWindow anchored to the marker when the marker is clicked.
+			google.maps.event.addListener( marker, 'click', function() { infowindow.open( map, marker ); });
+		}
+
+		function find_best_station()
+		{
+			var geocoder = new google.maps.Geocoder();    // instantiate a geocoder object
+			// Get the user's inputted address
+			var address = document.getElementById( "current_address" ).value;
+			var lat1, lng1;
+
+			var pi = Math.PI;
+    		var R = 6371; //equatorial radius
+    		var distances = [];
+    		var closest = -1;
+    		/*
+    		geocoder.geocode( { 'address': address }, function(results, status) {
+
+					lat1=results[0].geometry.location.lat();
+					lng1=results[0].geometry.location.lng();
+					console.log(lat1);
+
+			});
+			*/
+			lat1=current_lat;
+			lng1=current_lng;
+    		for( i=0;i<markers.length; i++ )
+    		{
+        		var lat2 = markers[i].position.lat();
+        		var lng2 = markers[i].position.lng();
+        		//console.log(lat1,lng1);
+        		var chLat = lat2-lat1;
+        		var chLng = lng2-lng1;
+        		//console.log(chLat);
+        		var dLat = chLat*(pi/180);
+        		var dLng = chLng*(pi/180);
+
+        		var rLat1 = lat1*(pi/180);
+        		var rLat2 = lat2*(pi/180);
+        		//console.log(rLat1);
+        		var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                    Math.sin(dLng/2) * Math.sin(dLng/2) * Math.cos(rLat1) * Math.cos(rLat2);
+                //console.log(a);
+        		var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        		var d = R * c;
+
+        		distances[i] = d;
+        		console.log(d);
+        		if ( closest == -1 || d < distances[closest] ) {
+            	closest = i;
+        		}
+        		//console.log(closest)
+
+			}
+
+		}
+
+
+		google.maps.event.addDomListener(window, 'load', initialize);
+
+		</script>
+	</head>
+<body>
+<h1>Car Information Form</h1>
+<form action="{% url 'gm:recordmanager' %}" method="post">
+	<table border='8'>
+		<tr>
+			<th>Choice</th>
+			<th>Company</th>
+	    	<th>Model</th>
+	    	<th>MadeYear</th>
+	    	<th>MPG</th>
+	    	<th>Location</th>
+	 	</tr>
+		{% csrf_token %}
+		{% for car in car_list %}
+			<tr>
+				<td><input type="radio" name="choice" id="choice{{ forloop.counter }}" value="{{ car.id }}" /></td>
+				<label for="choice{{ forloop.counter }}">
+			    <td>{{ car.company }}</td>
+			    <td>{{ car.modeltype }}</td>
+			    <td>{{ car.madeyear }}</td>
+			    <td>{{ car.mpg }}</td>
+			    <td>{{ car.location }}</td>
+			    </label><br />
+			</tr>
+			</label>
+		{% endfor %}
+	</table>
+<input type="submit" name = "add" value="Add" />
+<input type="submit" name = "edit" value="Edit" />
+<input type="submit" name = "delete" value="Delete" />
+<input type="submit" name = "search" value="Search" />
+<input type="submit" name = "trip" value="Trip Planner" />
+<input type="submit" name = "predict" value="Predict" />
+</form>
+<script type="text/javascript">
+			document.write("gas station map");
+		</script>
+
+		<div id="googleMap" style="width:800px;height:600px;"></div>
+		<div>
+			<label for="current address">Current_adddress</label>
+			<input type="text" id="current_address"/>
+			<button onclick="find_stations()">Locate</button>
+
+		</div>
+        <div>
+			<label for="destination address">Destination_adddress</label>
+			<input type="text" id="destination_address"/>
+			<button onclick="Both_find_stations()">Locate</button>
+		</div>
+</body>
+</html>
+
+

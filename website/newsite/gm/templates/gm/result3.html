@@ -1,0 +1,100 @@
+
+<html>
+	<head>
+		<title> My first Attempt </title>
+		<script
+			src="http://maps.googleapis.com/maps/api/js?key=AIzaSyCyY6mM5HyT5svJF0B-N7dpIlF1P7zDeyc&sensor=false">
+		</script>
+
+		<script>
+		var map;
+		var geocoder=new google.maps.Geocoder();
+
+		//=======================
+		// get info from database 
+		// 
+		var stations=[];
+		{% for station in station_list %}
+			stations.push({name: {{station.name}}, address: {{station.address}}, price: {{station.price}});
+		{% endfor %}
+
+		//function for set gas stations on Google map
+		function setmarker(station)
+		{
+			geocoder.geocode( { 'address': station.address}, function(results, status) 
+			{
+    			if (status == google.maps.GeocoderStatus.OK) 
+    			{
+      				//map.setCenter(results[0].geometry.location);
+      				var marker = new google.maps.Marker(
+      				{
+          				//map: map,
+          				position: results[0].geometry.location
+      				});
+      				var infowindow = new google.maps.InfoWindow({content:station.name+", price:"+station.price});
+      				google.maps.event.addListener(marker, 'click', function() {infowindow.open(map,marker);});
+      				marker.setMap(map);
+    			} else 
+    				{
+      					alert('Geocode was not successful for the following reason: ' + status);
+    				}
+  			});
+		}
+
+		// initialize map
+		function initialize()
+		{
+			var mapProp = 
+			{
+  				center:new google.maps.LatLng(40.1105,-88.2284), //uiuc LatLng
+  				zoom:12,
+  				mapTypeId:google.maps.MapTypeId.ROADMAP
+  				mapTypeId: google.maps.MapTypeId.HYBRID,
+  				streetViewControl: false,
+		        mapTypeControl: true,
+		        mapTypeControlOptions: {
+		            style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
+		            },
+  			};
+  			
+			map=new google.maps.Map(document.getElementById("googleMap"),mapProp);
+			var i;
+			for (i=0;i<stations.length;i++)
+			{
+				setmarker(stations[i]);
+			}
+		}
+		google.maps.event.addDomListener(window, 'load', initialize);
+
+		</script>
+	</head>
+
+	<body>
+		<h1>Gas Station</h1>
+		
+		<script type="text/javascript">
+			document.write("gas station map");
+		</script>
+
+		<div id="googleMap" style="width:800px;height:600px;"></div>
+
+		<a href="{% url 'gm:index' %}">back</a>
+		<table border='8'>
+			<tr>
+				<th>name</th>
+				<th>address</th>
+		    	<th>price</th>
+		    	<th>location(ZIP)</th>
+		 	</tr>
+			{% csrf_token %}
+			{% for station in station_list %}
+				<tr>
+				    <td>{{ station.name }}</td>
+				    <td>{{ station.address }}</td>
+				    <td>{{ station.price }}</td>
+				    <td>{{ station.location }}</td>
+				</tr>
+			{% endfor %}
+		</table>
+	</body>
+</html>

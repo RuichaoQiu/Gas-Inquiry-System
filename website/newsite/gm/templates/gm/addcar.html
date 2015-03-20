@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<body>
+	<head>
+    	<link href="http://s3.amazonaws.com/codecademy-content/courses/ltp/css/shift.css" rel="stylesheet">
+    	{% load staticfiles %}
+		
+    	<link rel="stylesheet" href="gm/main.css">
+    	<style>
+    		.bacpica {
+	  			background-image:url('http://74211.com/wallpaper/picture_big/Red-Porsche-Car-in-the-Run-Driving-at-Incredible-Speed-is-Good-Looking-Overall-a-Fit-for-Various-Devices-HD-Cars-Wallpaper.jpg');
+
+	  			height: 1200px;
+			}
+		</style>
+  	</head>
+ <div = "bacpica">
+<h1>Add Car Information</h1>
+
+<form action="{% url 'gm:recordmanager' %}" method="post">
+{% csrf_token %}
+company: <input type="text" name="company">
+modeltype: <input type="text" name="modeltype">
+madeyear: <input type="text" name="madeyear">
+mpg: <input type="text" name="mpg">
+location:<select name = "location">
+  <option value ="61801">61801</option>
+  <option value ="60609">60609</option>
+  <option value ="10007">10007</option>
+  <option value ="20004">20004</option>
+  <option value ="98104">98104</option>
+</select>
+<input type="submit" name = "new" value="Add" />
+</form>
+</div>
+</body>
+</html>
